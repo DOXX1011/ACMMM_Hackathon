@@ -10,7 +10,7 @@
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-Enabled-00D4AA?logo=google&logoColor=white)](https://mediapipe.dev/)
 [![WebRTC](https://img.shields.io/badge/WebRTC-Camera-FF6B6B?logo=webrtc&logoColor=white)](https://webrtc.org/)
 
-![Breava Screenshot](https://via.placeholder.com/800x400/1a1a1a/ffffff?text=Breava+Breathing+Coach+Screenshot)
+![Breava Screenshot](https://i.postimg.cc/0Q30Ns4z/breava-banner-1280x640.png)
 
 </div>
 
@@ -67,7 +67,6 @@ npm start
 | Category | Technologies |
 |----------|-------------|
 | **Frontend** | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black) |
-| **Camera** | ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=flat&logo=webrtc&logoColor=white) |
 | **Graphics** | ![Canvas](https://img.shields.io/badge/HTML5_Canvas-E34F26?style=flat&logo=html5&logoColor=white) |
 | **AI/ML** | ![MediaPipe](https://img.shields.io/badge/MediaPipe-00D4AA?style=flat&logo=google&logoColor=white) |
 | **Build** | ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white) ![npm](https://img.shields.io/badge/npm-CB3837?style=flat&logo=npm&logoColor=white) |
@@ -98,8 +97,8 @@ breava-breathing-coach/
 
 🧘 **Dr. Andrew Weil** - Creator of the 4-7-8 breathing technique  
 🤖 **Google MediaPipe** - Advanced face detection technology  
-💼 **Computer Workers Everywhere** - The inspiration for this project  
-🌍 **Open Source Community** - Making projects like this possible
+💼 **Myself And My Team** - The inspiration for this project  
+🌍 **ACMMM Hackathon** - Making projects like this possible
 
 </div>
 
