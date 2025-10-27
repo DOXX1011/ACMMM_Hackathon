@@ -101,7 +101,7 @@ breava-breathing-coach/
 
 🧘 **Dr. Andrew Weil** - Creator of the 4-7-8 breathing technique  
 🤖 **Google MediaPipe** - Advanced face detection technology  
-💼 **Myself And My Team** - The inspiration for this project  
+💼 **Artjom Rodionov, Michael Lazovy, Milen Kirilov** - The inspiration for this project  
 🌍 **ACMMM Hackathon** - Making projects like this possible
 
 </div>
