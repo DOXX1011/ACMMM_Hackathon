@@ -1,0 +1,1143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Breath Coach — Quick Relaxation for Computer Workers</title>
+  <link rel="stylesheet" href="./styles/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header with controls -->
+  <header class="topbar">
+    <div class="logo">
+      <h1><span class="sleep-icon">💤</span> Breava</h1>
+      <span class="subtitle">Relax and prepare yourself for bedtime with breath assistance</span>
+    </div>
+    <div class="actions">
+      <button id="btnCamera" class="btn-secondary">
+        <span class="icon">📹</span>
+        <span class="text">Start Camera</span>
+      </button>
+      <button id="btnRun" class="btn-primary">
+        <span class="icon">▶️</span>
+        <span class="text">Start Session</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Segment 1: Camera Window -->
+    <section class="panel camera-panel">
+      <div class="panel-header">
+        <h2>👁️ Camera View</h2>
+        <div class="status-indicator">
+          <div id="cameraStatus" class="status offline">Camera Off</div>
+        </div>
+      </div>
+      <div class="video-container">
+        <video id="video" playsinline muted autoplay></video>
+        <div id="videoOverlay" class="video-overlay hidden">
+          <!-- Face detection overlay will go here -->
+          <div class="face-outline"></div>
+          
+          <!-- Pose landmarks canvas -->
+          <canvas id="poseCanvas" class="pose-canvas"></canvas>
+          
+          <!-- Breathing Circle Navigator (only visible during session) -->
+          <div id="breathingCircle" class="breathing-circle hidden">
+            <div class="circle-content">
+              <div id="circleState" class="circle-state">Ready</div>
+              <div id="circleInstruction" class="circle-instruction">Press Start</div>
+            </div>
+          </div>
+          
+          <!-- MediaPipe status indicators -->
+          <div class="mediapipe-status">
+            <div id="poseDetectedIndicator" class="status-dot offline">
+              <span class="status-text">No Pose</span>
+            </div>
+            <div id="calibrationIndicator" class="calibration-progress">
+              <div class="progress-bar">
+                <div id="calibrationBar" class="progress-fill" style="width: 0%"></div>
+              </div>
+              <span id="calibrationText" class="calibration-text">Waiting for pose...</span>
+            </div>
+            <div id="breathingStateIndicator" class="breathing-state">
+              <span id="breathingStateText" class="breathing-state-text">Ready</span>
+              <div id="breathingMeter" class="breathing-meter">
+                <div id="breathingLevel" class="breathing-level" style="height: 50%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="placeholder-content">
+            <div class="placeholder-icon">📷</div>
+            <p>Click "Start Camera" to begin</p>
+            <small>Your face helps us detect your breathing rhythm</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Segment 2: Breathing Settings -->
+    <section class="panel settings-panel">
+      <div class="panel-header">
+        <h2>⚙️ Breathing Settings</h2>
+      </div>
+      
+      <div class="settings-content">
+        <!-- Technique Selection -->
+        <div class="technique-selection">
+          <h3>📋 Choose Breathing Technique</h3>
+          <div class="technique-options">
+            <div class="technique-option active" data-technique="simple">
+              <div class="technique-info">
+                <div class="technique-name">4-7-8</div>
+                <div class="technique-description">Use 4-7-8 breathing technique: Inhale 4s, Hold 7s, Exhale 8s</div>
+              </div>
+              <div class="technique-indicator">✓</div>
+            </div>
+            <div class="technique-option" data-technique="custom">
+              <div class="technique-info">
+                <div class="technique-name">Custom</div>
+                <div class="technique-description">Customize your own breathing pattern</div>
+              </div>
+              <div class="technique-indicator">⚙️</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Settings Display -->
+        <div class="current-settings">
+          <h3>🎯 Current Rhythm Settings:</h3>
+          <div class="settings-display">
+            <div class="setting-item">
+              <span class="setting-label">Inhale:</span>
+              <span id="currentInhale" class="setting-value">4s</span>
+            </div>
+            <div class="setting-item">
+              <span class="setting-label">Hold:</span>
+              <span id="currentHold" class="setting-value">7s</span>
+            </div>
+            <div class="setting-item">
+              <span class="setting-label">Exhale:</span>
+              <span id="currentExhale" class="setting-value">8s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Controls (hidden by default) -->
+        <div id="customControls" class="custom-controls hidden">
+          <h3>🛠️ Customize Your Pattern</h3>
+          <div class="timing-grid">
+            <div class="timing-item inhale">
+              <label class="timing-label">
+                <span class="timing-icon">⬆️</span>
+                <span class="timing-name">Inhale</span>
+              </label>
+              <div class="timing-adjuster">
+                <button type="button" class="btn-adjust" data-action="dec" data-phase="inhale">−</button>
+                <span id="durInhale" class="timing-value">4s</span>
+                <button type="button" class="btn-adjust" data-action="inc" data-phase="inhale">+</button>
+              </div>
+            </div>
+            
+            <div class="timing-item hold">
+              <label class="timing-label">
+                <span class="timing-icon">⏸️</span>
+                <span class="timing-name">Hold</span>
+              </label>
+              <div class="timing-adjuster">
+                <button type="button" class="btn-adjust" data-action="dec" data-phase="hold">−</button>
+                <span id="durHold" class="timing-value">7s</span>
+                <button type="button" class="btn-adjust" data-action="inc" data-phase="hold">+</button>
+              </div>
+            </div>
+            
+            <div class="timing-item exhale">
+              <label class="timing-label">
+                <span class="timing-icon">⬇️</span>
+                <span class="timing-name">Exhale</span>
+              </label>
+              <div class="timing-adjuster">
+                <button type="button" class="btn-adjust" data-action="dec" data-phase="exhale">−</button>
+                <span id="durExhale" class="timing-value">8s</span>
+                <button type="button" class="btn-adjust" data-action="inc" data-phase="exhale">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Segment 3: Rhythm Diagram -->
+    <section class="panel diagram-panel">
+      <div class="panel-header">
+        <h2>📊 Breathing Rhythm</h2>
+      </div>
+      
+      <div class="diagram-container">
+        <canvas id="breathingDiagram" class="breathing-diagram"></canvas>
+        <div class="diagram-legend">
+          <div class="legend-item">
+            <div class="legend-color guide"></div>
+            <span>Expected Rhythm</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color actual"></div>
+            <span>Your Breathing</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="diagram-info">
+        <div class="info-item">
+          <span class="info-label">Session Progress:</span>
+          <span id="sessionProgress" class="info-value">0 cycles</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Rhythm Sync:</span>
+          <span id="rhythmSync" class="info-value">--</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- How to Use Modal -->
+  <div id="howToUseModal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>How to use</h2>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="guide-section">
+          <h3>Before starting a 4-7-8 breathing session.</h3>
+        </div>
+
+        <div class="guide-section">
+          <h4>🚀 Quick Start</h4>
+          <ul>
+            <li>Click Start session.</li>
+            <li>Sit up straight. Keep your back upright and shoulders relaxed.</li>
+            <li>Make sure your head, chest, and shoulders are visible in the frame—this helps the system track your breathing.</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h4>🫁 How to do the 4-7-8 technique</h4>
+          <ul>
+            <li><strong>Tongue position.</strong> Place the tip of your tongue against the ridge behind your upper front teeth and keep it there throughout the cycle.</li>
+            <li><strong>Full exhale.</strong> Exhale completely through your mouth with a "whoosh" sound, emptying your lungs.</li>
+            <li><strong>Inhale (4).</strong> Inhale quietly through your nose while counting to 4.</li>
+            <li><strong>Hold (7).</strong> Hold your breath for a count of 7.</li>
+            <li><strong>Exhale (8).</strong> Exhale completely through your mouth with a "whoosh" for a count of 8.</li>
+          </ul>
+          <p class="technique-note">This is one cycle. Do 4 cycles to complete the technique.</p>
+        </div>
+
+        <div class="guide-section">
+          <h4>📊 On-screen guidance</h4>
+          <ul>
+            <li>A central indicator circle is shown.</li>
+            <li>Red = inhale, Green = hold, Blue = exhale.</li>
+            <li>A progress bar shows how much time remains in the current phase.</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h4>💡 Helpful tips</h4>
+          <ul>
+            <li>Breathe quietly and evenly, without strain.</li>
+            <li>If you feel light-headed, stop and return to normal breathing.</li>
+          </ul>
+        </div>
+
+        <div class="guide-section">
+          <h4>🔒 Privacy</h4>
+          <p>Video is processed locally in your browser. No data is uploaded or saved anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-center">
+        <div class="social-icons">
+          <a href="#" class="social-icon github" title="GitHub">
+            <span>🐙</span>
+          </a>
+          <a href="#" class="social-icon linkedin" title="LinkedIn">
+            <span>💼</span>
+          </a>
+          <a href="#" class="social-icon university" title="RGU University">
+            <span>🎓</span>
+          </a>
+        </div>
+        <div class="footer-links">
+          <a href="#" class="footer-link">How to use</a>
+        </div>
+        <div class="footer-team">
+          2025 RGU_SOLVERS Team
+        </div>
+        <div class="footer-hackathon">
+          ACMMM Hackathon
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MediaPipe Pose Landmarker - ES Module Approach -->
+  <script type="module">
+    // Import the necessary components from the MediaPipe ES module.
+    import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+    // This function will be called by our main script to initialize MediaPipe.
+    async function initializeMediaPipe() {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
+      );
+      
+      // Return a function that can create a PoseLandmarker instance.
+      return () => PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+          delegate: "GPU"
+        },
+        runningMode: "VIDEO",
+        numPoses: 1
+      });
+    }
+
+    // Attach the initializer to the window object so our main script can access it.
+    window.mediaPipeInitializer = initializeMediaPipe;
+    
+    // Dispatch a custom event to let the main script know the initializer is ready.
+    document.dispatchEvent(new CustomEvent("mediaPipeReady"));
+  </script>
+  
+  <script>
+    // Auto-hide topbar on scroll down - stable version with proper debouncing
+    let isHidden = false;
+    let scrollTimeout = null;
+    const SHOW_THRESHOLD = 5;    // Show when within 5px of top
+    const HIDE_THRESHOLD = 100;  // Hide when scrolled past 100px
+    const DEBOUNCE_DELAY = 50;   // Wait 50ms after scrolling stops
+    
+    function updateTopbarVisibility() {
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const topbar = document.querySelector('.topbar');
+      
+      // Use clear thresholds with larger gap to prevent flickering
+      if (!isHidden && currentScroll > HIDE_THRESHOLD) {
+        // Currently showing and scrolled enough - hide it
+        topbar.classList.add('hidden');
+        isHidden = true;
+      } else if (isHidden && currentScroll <= SHOW_THRESHOLD) {
+        // Currently hidden and at top - show it
+        topbar.classList.remove('hidden');
+        isHidden = false;
+      }
+    }
+
+    // Debounced scroll handler - only run after scrolling stops
+    function handleScroll() {
+      // Clear previous timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      
+      // Set new timeout to run after scrolling stops
+      scrollTimeout = setTimeout(updateTopbarVisibility, DEBOUNCE_DELAY);
+    }
+
+    // Add scroll listener with passive flag for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Initial check on page load
+    updateTopbarVisibility();
+
+    // Camera functionality
+    let cameraStream = null;
+    let isCameraActive = false;
+
+    async function startCamera() {
+      try {
+        const video = document.getElementById('video');
+        const cameraBtn = document.getElementById('btnCamera');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+
+        // Request camera permission and get stream
+        const constraints = {
+          video: {
+            facingMode: 'user', // Always use front camera
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        // Set video source
+        video.srcObject = cameraStream;
+        await video.play();
+
+        // Update UI
+        isCameraActive = true;
+        videoPlaceholder.style.display = 'none';
+        video.style.display = 'block';
+        
+        // Update button
+        cameraBtn.innerHTML = '<span class="icon">⏹️</span><span class="text">Stop Camera</span>';
+        cameraBtn.classList.remove('btn-secondary');
+        cameraBtn.classList.add('btn-success');
+        
+        // Update status
+        cameraStatus.textContent = 'Camera On';
+        cameraStatus.classList.remove('offline');
+        cameraStatus.classList.add('online');
+
+        console.log('Camera started successfully');
+
+      } catch (error) {
+        console.error('Error starting camera:', error);
+        alert('Unable to access camera. Please ensure you have granted camera permissions and try again.');
+      }
+    }
+
+    function stopCamera() {
+      const video = document.getElementById('video');
+      const cameraBtn = document.getElementById('btnCamera');
+      const cameraStatus = document.getElementById('cameraStatus');
+      const videoPlaceholder = document.getElementById('videoPlaceholder');
+
+      // Stop camera stream
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+
+      // Update UI
+      isCameraActive = false;
+      video.srcObject = null;
+      video.style.display = 'none';
+      videoPlaceholder.style.display = 'flex';
+      
+      // Update button
+      cameraBtn.innerHTML = '<span class="icon">📹</span><span class="text">Start Camera</span>';
+      cameraBtn.classList.remove('btn-success');
+      cameraBtn.classList.add('btn-secondary');
+      
+      // Update status
+      cameraStatus.textContent = 'Camera Off';
+      cameraStatus.classList.remove('online');
+      cameraStatus.classList.add('offline');
+
+      console.log('Camera stopped');
+    }
+
+    // Camera button click handler
+    document.getElementById('btnCamera').addEventListener('click', function() {
+      if (isCameraActive) {
+        stopCamera();
+      } else {
+        // Show modal first when starting camera
+        showModal();
+      }
+    });
+
+    // Modal functionality
+    function showModal() {
+      const modal = document.getElementById('howToUseModal');
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+
+    function hideModal() {
+      const modal = document.getElementById('howToUseModal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto'; // Restore scrolling
+    }
+
+    // Modal close handlers
+    document.getElementById('closeModal').addEventListener('click', function() {
+      hideModal();
+      // Start camera after closing modal
+      startCamera();
+    });
+
+    // Close modal when clicking overlay
+    document.querySelector('.modal-overlay').addEventListener('click', function() {
+      hideModal();
+      // Start camera after closing modal
+      startCamera();
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        const modal = document.getElementById('howToUseModal');
+        if (!modal.classList.contains('hidden')) {
+          hideModal();
+          // Start camera after closing modal
+          startCamera();
+        }
+      }
+    });
+
+    // Session Management
+    let isSessionActive = false;
+
+    // Session button click handler
+    document.getElementById('btnRun').addEventListener('click', function() {
+      if (isSessionActive) {
+        stopSession();
+      } else {
+        startSession();
+      }
+    });
+
+    function startSession() {
+      const sessionBtn = document.getElementById('btnRun');
+      
+      // Update session state
+      isSessionActive = true;
+      sessionActive = true;
+      
+      // Show breathing circle
+      const breathingCircle = document.getElementById('breathingCircle');
+      if (breathingCircle) {
+        breathingCircle.classList.remove('hidden');
+      }
+      
+      // Reset calibration for new session
+      calibrationSamples = 0;
+      shoulderBaseline = 0;
+      currentBreathingState = 'neutral';
+      
+      // Update button appearance
+      sessionBtn.innerHTML = '<span class="icon">⏹️</span><span class="text">Stop Session</span>';
+      sessionBtn.classList.remove('btn-primary');
+      sessionBtn.classList.add('btn-danger');
+      
+      console.log('Session started - pose detection active');
+    }
+
+    function stopSession() {
+      const sessionBtn = document.getElementById('btnRun');
+      
+      // Update session state
+      isSessionActive = false;
+      sessionActive = false;
+      
+      // Hide breathing circle
+      const breathingCircle = document.getElementById('breathingCircle');
+      if (breathingCircle) {
+        breathingCircle.classList.add('hidden');
+      }
+      
+      // Reset states
+      currentBreathingState = 'neutral';
+      
+      // Update button appearance
+      sessionBtn.innerHTML = '<span class="icon">▶️</span><span class="text">Start Session</span>';
+      sessionBtn.classList.remove('btn-danger');
+      sessionBtn.classList.add('btn-primary');
+      
+      console.log('Session stopped - pose detection paused');
+    }
+
+    // Breathing Detection and Visualization
+    let breathingDetector;
+    let waveformData = [];
+    const maxDataPoints = 300; // 5 seconds at 60fps
+    
+    // Canvas for diagram
+    const canvas = document.getElementById('breathingDiagram');
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    
+    // MediaPipe Pose Detection Variables
+    let poseLandmarker;
+    let poseDetectionActive = false;
+    let sessionActive = false;
+    let lastShoulderY = 0;
+    let shoulderBaseline = 0;
+    let calibrationSamples = 0;
+    let currentBreathingState = 'neutral';
+    
+    // Initialize MediaPipe Pose Landmarker using the ES Module Initializer
+    async function initializePoseDetection() {
+      try {
+        console.log('Waiting for MediaPipe initializer to be ready...');
+        
+        // Wait for the custom event that signals the MediaPipe initializer is ready.
+        await new Promise(resolve => {
+          if (window.mediaPipeInitializer) {
+            resolve();
+          } else {
+            document.addEventListener("mediaPipeReady", resolve, { once: true });
+          }
+        });
+
+        console.log('MediaPipe initializer is ready. Creating PoseLandmarker...');
+        
+        // Get the creator function from the window object.
+        const createPoseLandmarker = await window.mediaPipeInitializer();
+        
+        // Create the PoseLandmarker instance.
+        poseLandmarker = await createPoseLandmarker();
+        
+        if (!poseLandmarker) {
+          throw new Error("PoseLandmarker creation failed.");
+        }
+        
+        console.log('MediaPipe Pose Landmarker initialized successfully');
+        
+        // Update status indicator
+        const poseIndicator = document.getElementById('poseDetectedIndicator');
+        if (poseIndicator) {
+          const poseText = poseIndicator.querySelector('.status-text');
+          poseIndicator.classList.remove('offline');
+          poseIndicator.classList.add('online');
+          if (poseText) poseText.textContent = 'Pose Ready';
+        }
+        
+        // Show overlay with landmarks
+        const overlay = document.getElementById('videoOverlay');
+        overlay.classList.remove('hidden');
+        
+        return true;
+      } catch (error) {
+        console.error('Failed to initialize MediaPipe Pose Landmarker:', error);
+        return false;
+      }
+    }
+    
+    // Process pose detection
+    function processPoseDetection(video) {
+      if (!poseLandmarker || !video || video.videoWidth === 0) return;
+      
+      try {
+        const timestamp = performance.now();
+        const results = poseLandmarker.detectForVideo(video, timestamp);
+        
+        if (results && results.landmarks && results.landmarks.length > 0) {
+          const landmarks = results.landmarks[0];
+          
+          // Draw pose landmarks
+          drawPoseLandmarks(landmarks);
+          
+          // Only track breathing during active session
+          if (sessionActive) {
+            trackShoulderMovement(landmarks);
+          }
+        }
+      } catch (error) {
+        console.error('Pose detection error:', error);
+      }
+    }
+    
+    // Draw pose landmarks on canvas
+    function drawPoseLandmarks(landmarks) {
+      const canvas = document.getElementById('poseCanvas');
+      const ctx = canvas.getContext('2d');
+      const video = document.getElementById('video');
+      
+      // Set canvas size to match video
+      canvas.width = video.offsetWidth;
+      canvas.height = video.offsetHeight;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw key pose landmarks
+      ctx.fillStyle = '#00ff00';
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      
+      // Draw shoulder landmarks (11, 12)
+      const leftShoulder = landmarks[11];
+      const rightShoulder = landmarks[12];
+      
+      if (leftShoulder && rightShoulder) {
+        const x1 = leftShoulder.x * canvas.width;
+        const y1 = leftShoulder.y * canvas.height;
+        const x2 = rightShoulder.x * canvas.width;
+        const y2 = rightShoulder.y * canvas.height;
+        
+        // Draw shoulder points
+        ctx.beginPath();
+        ctx.arc(x1, y1, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(x2, y2, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw shoulder line
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    }
+    
+    // Track shoulder movement for breathing detection
+    function trackShoulderMovement(landmarks) {
+      const leftShoulder = landmarks[11];
+      const rightShoulder = landmarks[12];
+      
+      if (!leftShoulder || !rightShoulder) return;
+      
+      // Calculate average shoulder Y position
+      const avgShoulderY = (leftShoulder.y + rightShoulder.y) / 2;
+      
+      // Calibration phase - establish baseline
+      if (calibrationSamples < 30) {
+        shoulderBaseline += avgShoulderY;
+        calibrationSamples++;
+        
+        if (calibrationSamples === 30) {
+          shoulderBaseline = shoulderBaseline / 30;
+          console.log('Shoulder baseline calibrated:', shoulderBaseline);
+          
+          // Update calibration indicator
+          const calibrationBar = document.getElementById('calibrationBar');
+          const calibrationText = document.getElementById('calibrationText');
+          if (calibrationBar && calibrationText) {
+            calibrationBar.style.width = '100%';
+            calibrationBar.style.background = '#10b981';
+            calibrationText.textContent = 'Calibrated ✓';
+          }
+        } else {
+          // Update calibration progress
+          const progress = (calibrationSamples / 30) * 100;
+          const calibrationBar = document.getElementById('calibrationBar');
+          const calibrationText = document.getElementById('calibrationText');
+          if (calibrationBar && calibrationText) {
+            calibrationBar.style.width = `${progress}%`;
+            calibrationText.textContent = `Calibrating... ${Math.round(progress)}%`;
+          }
+        }
+        return;
+      }
+      
+      // Determine breathing state based on shoulder movement
+      const threshold = 0.015; // Adjust sensitivity
+      const movement = avgShoulderY - shoulderBaseline;
+      
+      let newState = 'neutral';
+      if (movement < -threshold) {
+        newState = 'inhale'; // Shoulders up (Y decreases)
+      } else if (movement > threshold) {
+        newState = 'exhale'; // Shoulders down (Y increases)
+      }
+      
+      // Update breathing state if changed
+      if (newState !== currentBreathingState) {
+        currentBreathingState = newState;
+        updateBreathingCircle(newState);
+        updateBreathingDisplay(movement);
+      }
+      
+      // Add to waveform data
+      waveformData.push({
+        time: Date.now(),
+        value: 0.5 + (movement * 5), // Convert to 0-1 range
+        type: 'actual'
+      });
+      
+      // Keep only recent data
+      if (waveformData.length > maxDataPoints) {
+        waveformData.shift();
+      }
+    }
+    
+    // Update breathing circle based on detected state
+    function updateBreathingCircle(state) {
+      const circle = document.getElementById('breathingCircle');
+      const circleState = document.getElementById('circleState');
+      const circleInstruction = document.getElementById('circleInstruction');
+      
+      if (!circle || !circleState || !circleInstruction) return;
+      
+      // Remove all state classes
+      circle.classList.remove('inhale', 'exhale', 'neutral');
+      
+      // Add current state class and update content
+      switch (state) {
+        case 'inhale':
+          circle.classList.add('inhale');
+          circleState.textContent = 'Inhale';
+          circleInstruction.textContent = 'Breathe In';
+          break;
+        case 'exhale':
+          circle.classList.add('exhale');
+          circleState.textContent = 'Exhale';
+          circleInstruction.textContent = 'Breathe Out';
+          break;
+        case 'neutral':
+          circle.classList.add('neutral');
+          circleState.textContent = 'Hold';
+          circleInstruction.textContent = 'Relax';
+          break;
+      }
+    }
+    
+    function updateBreathingDisplay(movement) {
+      // Update rhythm sync indicator
+      const rhythmSync = document.getElementById('rhythmSync');
+      if (calibrationSamples >= 30) {
+        rhythmSync.textContent = 'Tracking';
+      } else {
+        rhythmSync.textContent = 'Calibrating...';
+      }
+      
+      // Update breathing state text
+      const breathingStateText = document.getElementById('breathingStateText');
+      const breathingLevel = document.getElementById('breathingLevel');
+      
+      if (breathingStateText && breathingLevel) {
+        breathingStateText.textContent = currentBreathingState.charAt(0).toUpperCase() + currentBreathingState.slice(1);
+        
+        // Update breathing meter based on movement
+        const levelHeight = Math.max(0, Math.min(100, 50 + (movement * 100)));
+        breathingLevel.style.height = `${levelHeight}%`;
+        
+        // Add breathing state colors
+        breathingStateText.className = `breathing-state-text ${currentBreathingState}`;
+      }
+      
+      console.log('Breathing state:', currentBreathingState, 'Movement:', movement.toFixed(4));
+    }
+    
+    function setupCanvas() {
+      const canvas = document.getElementById('breathingDiagram');
+      const container = canvas.parentElement;
+      
+      // Set canvas size
+      canvas.width = container.offsetWidth;
+      canvas.height = 300;
+      
+      startBreathingVisualization();
+    }
+    
+    function startBreathingVisualization() {
+      function animate() {
+        drawBreathingDiagram();
+        animationId = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    
+    function drawBreathingDiagram() {
+      const canvas = document.getElementById('breathingDiagram');
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw grid
+      drawGrid(ctx, canvas);
+      
+      // Draw breathing waveform
+      if (waveformData.length > 1) {
+        drawWaveform(ctx, canvas);
+      }
+      
+      // Draw current breathing indicator
+      if (breathingDetector) {
+        drawCurrentIndicator(ctx, canvas);
+      }
+      
+      // Draw phase labels
+      drawPhaseLabels(ctx, canvas);
+    }
+    
+    function drawGrid(ctx, canvas) {
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      
+      // Horizontal lines
+      for (let i = 0; i <= 4; i++) {
+        const y = (canvas.height / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      // Vertical lines
+      for (let i = 0; i <= 8; i++) {
+        const x = (canvas.width / 8) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]);
+    }
+    
+    function drawWaveform(ctx, canvas) {
+      if (waveformData.length < 2) return;
+      
+      const now = Date.now();
+      const timeWindow = 10000; // 10 seconds
+      
+      // Filter recent data
+      const recentData = waveformData.filter(point => now - point.time < timeWindow);
+      
+      if (recentData.length < 2) return;
+      
+      // Draw actual breathing line
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      
+      recentData.forEach((point, index) => {
+        const x = (index / (recentData.length - 1)) * canvas.width;
+        const y = canvas.height - (point.value * canvas.height);
+        
+        if (index === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      
+      ctx.stroke();
+      
+      // Draw simple trend line (green dashed)
+      if (recentData.length > 10) {
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        
+        // Simple smoothing - just skip every other point
+        const simplified = recentData.filter((_, index) => index % 2 === 0);
+        simplified.forEach((point, index) => {
+          const x = (index / (simplified.length - 1)) * canvas.width;
+          const y = canvas.height - (point.value * canvas.height);
+          
+          if (index === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    
+    function drawCurrentIndicator(ctx, canvas) {
+      if (!sessionActive) return;
+      
+      // Get current breathing level from the latest waveform data
+      let breathingSignal = 0.5; // Default neutral
+      if (waveformData.length > 0) {
+        breathingSignal = waveformData[waveformData.length - 1].value;
+      }
+      
+      // Current breathing level indicator
+      const x = canvas.width - 20;
+      const y = canvas.height - (breathingSignal * canvas.height);
+      
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Breathing state text
+      ctx.fillStyle = '#f9fafb';
+      ctx.font = '14px Inter';
+      ctx.textAlign = 'right';
+      
+      const stateText = currentBreathingState.charAt(0).toUpperCase() + currentBreathingState.slice(1);
+      ctx.fillText(stateText, canvas.width - 30, y - 10);
+    }
+    
+    function drawPhaseLabels(ctx, canvas) {
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '12px Inter';
+      ctx.textAlign = 'left';
+      
+      // Labels
+      ctx.fillText('Exhale', 10, 30);
+      ctx.fillText('Neutral', 10, canvas.height / 2);
+      ctx.fillText('Inhale', 10, canvas.height - 10);
+      
+      // Status info
+      ctx.textAlign = 'right';
+      ctx.fillText(`Samples: ${waveformData.length}`, canvas.width - 10, 20);
+      
+      if (sessionActive) {
+        ctx.fillText(`State: ${currentBreathingState}`, canvas.width - 10, 40);
+        
+        if (calibrationSamples < 30) {
+          const progress = Math.round((calibrationSamples / 30) * 100);
+          ctx.fillText(`Calibrating: ${progress}%`, canvas.width - 10, 60);
+        } else {
+          ctx.fillText('Calibrated ✓', canvas.width - 10, 60);
+        }
+      } else {
+        ctx.fillText('Session Stopped', canvas.width - 10, 40);
+      }
+    }
+    
+    // Start pose detection and visualization
+    async function startPoseDetection() {
+      if (!poseLandmarker) {
+        await initializePoseDetection();
+      }
+      
+      // Start pose detection loop
+      poseDetectionActive = true;
+      poseDetectionLoop();
+    }
+    
+    // Pose detection loop
+    function poseDetectionLoop() {
+      if (!poseDetectionActive) return;
+      
+      const video = document.getElementById('video');
+      if (video && video.videoWidth > 0) {
+        processPoseDetection(video);
+      }
+      
+      // Continue the loop
+      requestAnimationFrame(poseDetectionLoop);
+    }
+    
+    // Update the startCamera function to include pose detection
+    const originalStartCamera = startCamera;
+    startCamera = async function() {
+      await originalStartCamera();
+      if (isCameraActive) {
+        await startPoseDetection();
+      }
+    };
+    
+    // Update stopCamera to cleanup pose detection
+    const originalStopCamera = stopCamera;
+    stopCamera = function() {
+      // Stop pose detection
+      poseDetectionActive = false;
+      sessionActive = false;
+      
+      // Hide breathing circle
+      const breathingCircle = document.getElementById('breathingCircle');
+      if (breathingCircle) {
+        breathingCircle.classList.add('hidden');
+      }
+      
+      // Hide overlay
+      const overlay = document.getElementById('videoOverlay');
+      overlay.classList.add('hidden');
+      
+      // Clear waveform data
+      waveformData = [];
+      
+      originalStopCamera();
+    };
+    
+    // Initialize canvas when page loads
+    window.addEventListener('load', function() {
+      setupCanvas();
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      setupCanvas();
+    });
+
+    // Breathing Technique Selection
+    let currentTechnique = 'simple';
+    let breathingSettings = {
+      inhale: 4,
+      hold: 7,
+      exhale: 8
+    };
+
+    // Technique option click handlers
+    document.querySelectorAll('.technique-option').forEach(option => {
+      option.addEventListener('click', function() {
+        const technique = this.dataset.technique;
+        
+        // Remove active class from all options
+        document.querySelectorAll('.technique-option').forEach(opt => {
+          opt.classList.remove('active');
+        });
+        
+        // Add active class to clicked option
+        this.classList.add('active');
+        
+        // Update current technique
+        currentTechnique = technique;
+        
+        // Show/hide custom controls
+        const customControls = document.getElementById('customControls');
+        if (technique === 'custom') {
+          customControls.classList.remove('hidden');
+        } else {
+          customControls.classList.add('hidden');
+          // Reset to default 4-7-8 values
+          breathingSettings = { inhale: 4, hold: 7, exhale: 8 };
+          updateSettingsDisplay();
+          updateTimingDisplay();
+        }
+      });
+    });
+
+    // Update settings display
+    function updateSettingsDisplay() {
+      document.getElementById('currentInhale').textContent = breathingSettings.inhale + 's';
+      document.getElementById('currentHold').textContent = breathingSettings.hold + 's';
+      document.getElementById('currentExhale').textContent = breathingSettings.exhale + 's';
+    }
+
+    // Update timing controls display
+    function updateTimingDisplay() {
+      document.getElementById('durInhale').textContent = breathingSettings.inhale + 's';
+      document.getElementById('durHold').textContent = breathingSettings.hold + 's';
+      document.getElementById('durExhale').textContent = breathingSettings.exhale + 's';
+    }
+
+    // Handle breathing timing adjustments
+    document.querySelectorAll('.btn-adjust').forEach(button => {
+      button.addEventListener('click', function() {
+        const action = this.dataset.action;
+        const phase = this.dataset.phase;
+        
+        if (action === 'inc') {
+          breathingSettings[phase] = Math.min(breathingSettings[phase] + 1, 15);
+        } else if (action === 'dec') {
+          breathingSettings[phase] = Math.max(breathingSettings[phase] - 1, 1);
+        }
+        
+        updateSettingsDisplay();
+        updateTimingDisplay();
+      });
+    });
+
+    // Initialize settings display
+    updateSettingsDisplay();
+    updateTimingDisplay();
+
+  </script>
+</body>
+</html>
