@@ -46,30 +46,17 @@
           <!-- Pose landmarks canvas -->
           <canvas id="poseCanvas" class="pose-canvas"></canvas>
           
-          <!-- Breathing Circle Navigator (only visible during session) -->
-          <div id="breathingCircle" class="breathing-circle hidden">
-            <div class="circle-content">
-              <div id="circleState" class="circle-state">Ready</div>
-              <div id="circleInstruction" class="circle-instruction">Press Start</div>
+          <!-- Breathing Instructions Panel (top-right corner) -->
+          <div id="breathingInstructions" class="breathing-instructions hidden">
+            <div class="instruction-header">
+              <span class="instruction-icon">🫁</span>
+              <span class="instruction-title">4-7-8 Breathing</span>
             </div>
-          </div>
-          
-          <!-- MediaPipe status indicators -->
-          <div class="mediapipe-status">
-            <div id="poseDetectedIndicator" class="status-dot offline">
-              <span class="status-text">No Pose</span>
-            </div>
-            <div id="calibrationIndicator" class="calibration-progress">
-              <div class="progress-bar">
-                <div id="calibrationBar" class="progress-fill" style="width: 0%"></div>
-              </div>
-              <span id="calibrationText" class="calibration-text">Waiting for pose...</span>
-            </div>
-            <div id="breathingStateIndicator" class="breathing-state">
-              <span id="breathingStateText" class="breathing-state-text">Ready</span>
-              <div id="breathingMeter" class="breathing-meter">
-                <div id="breathingLevel" class="breathing-level" style="height: 50%"></div>
-              </div>
+            <div class="instruction-content">
+              <div id="instructionText" class="instruction-text">Get ready...</div>
+              <div id="instructionTimer" class="instruction-timer">4</div>
+              <div id="instructionPhase" class="instruction-phase">Preparation</div>
+              <div id="cycleProgress" class="cycle-progress">Cycle 1 of 4</div>
             </div>
           </div>
         </div>
@@ -196,6 +183,10 @@
       
       <div class="diagram-info">
         <div class="info-item">
+          <span class="info-label">Current Cycle:</span>
+          <span id="currentCycle" class="info-value">0 / 4</span>
+        </div>
+        <div class="info-item">
           <span class="info-label">Session Progress:</span>
           <span id="sessionProgress" class="info-value">0 cycles</span>
         </div>
@@ -261,6 +252,39 @@
         <div class="guide-section">
           <h4>🔒 Privacy</h4>
           <p>Video is processed locally in your browser. No data is uploaded or saved anywhere.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breathing Completion Modal -->
+  <div id="completionModal" class="modal hidden">
+    <div class="modal-overlay"></div>
+    <div class="modal-content completion-modal">
+      <div class="modal-header">
+        <h2>🎉 Congratulations!</h2>
+      </div>
+      <div class="modal-body">
+        <div class="completion-message">
+          <div class="completion-icon">✨</div>
+          <h3>You completed the 4-7-8 breathing technique!</h3>
+          <p>You have successfully finished all 4 breathing cycles. Well done!</p>
+          <div class="completion-stats">
+            <div class="stat-item">
+              <span class="stat-number">4</span>
+              <span class="stat-label">Cycles Completed</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">--</span>
+              <span class="stat-label">Total Session Time</span>
+            </div>
+          </div>
+        </div>
+        <div class="completion-actions">
+          <button id="finishSession" class="btn-primary btn-large">
+            <span class="icon">✓</span>
+            <span class="text">Finish Session</span>
+          </button>
         </div>
       </div>
     </div>
@@ -496,6 +520,24 @@
 
     // Session Management
     let isSessionActive = false;
+    
+    // Breathing Timer System Variables
+    let breathingTimer = null;
+    let timerPhase = 'stopped'; // 'preparation', 'inhale', 'hold', 'exhale', 'completed'
+    let timerSeconds = 0;
+    let currentCycleNumber = 0;
+    let totalCycles = 4;
+    let sessionStartTime = 0;
+    
+    // Get current breathing timing from settings
+    function getCurrentBreathingPhases() {
+      return {
+        preparation: 4,  // 4s delay (always fixed)
+        inhale: breathingSettings.inhale,
+        hold: breathingSettings.hold,
+        exhale: breathingSettings.exhale
+      };
+    }
 
     // Session button click handler
     document.getElementById('btnRun').addEventListener('click', function() {
@@ -507,54 +549,245 @@
     });
 
     function startSession() {
+      if (!isCameraActive) {
+        alert('Please start the camera first');
+        return;
+      }
+      
       const sessionBtn = document.getElementById('btnRun');
       
       // Update session state
       isSessionActive = true;
       sessionActive = true;
+      sessionStartTime = Date.now();
       
-      // Show breathing circle
-      const breathingCircle = document.getElementById('breathingCircle');
-      if (breathingCircle) {
-        breathingCircle.classList.remove('hidden');
+      // Reset breathing cycle variables
+      currentCycleNumber = 1;
+      timerPhase = 'preparation';
+      timerSeconds = getCurrentBreathingPhases().preparation;
+      
+      // Show breathing instructions
+      const breathingInstructions = document.getElementById('breathingInstructions');
+      
+      if (breathingInstructions) {
+        breathingInstructions.classList.remove('hidden');
       }
       
-      // Reset calibration for new session
-      calibrationSamples = 0;
-      shoulderBaseline = 0;
-      currentBreathingState = 'neutral';
+      // Update cycle progress
+      updateCycleProgress();
       
       // Update button appearance
       sessionBtn.innerHTML = '<span class="icon">⏹️</span><span class="text">Stop Session</span>';
       sessionBtn.classList.remove('btn-primary');
       sessionBtn.classList.add('btn-danger');
       
-      console.log('Session started - pose detection active');
+      // Start the breathing timer
+      startBreathingTimer();
+      
+      const phases = getCurrentBreathingPhases();
+      console.log(`Breathing session started - ${phases.inhale}s inhale, ${phases.hold}s hold, ${phases.exhale}s exhale`);
     }
 
     function stopSession() {
       const sessionBtn = document.getElementById('btnRun');
       
+      // Stop breathing timer
+      stopBreathingTimer();
+      
       // Update session state
       isSessionActive = false;
       sessionActive = false;
       
-      // Hide breathing circle
-      const breathingCircle = document.getElementById('breathingCircle');
-      if (breathingCircle) {
-        breathingCircle.classList.add('hidden');
+      // Hide breathing instructions
+      const breathingInstructions = document.getElementById('breathingInstructions');
+      
+      if (breathingInstructions) {
+        breathingInstructions.classList.add('hidden');
       }
       
-      // Reset states
-      currentBreathingState = 'neutral';
+      // Reset cycle progress
+      currentCycleNumber = 0;
+      updateCycleProgress();
       
       // Update button appearance
       sessionBtn.innerHTML = '<span class="icon">▶️</span><span class="text">Start Session</span>';
       sessionBtn.classList.remove('btn-danger');
       sessionBtn.classList.add('btn-primary');
       
-      console.log('Session stopped - pose detection paused');
+      console.log('Breathing session stopped');
     }
+    
+    // Start the breathing timer system
+    function startBreathingTimer() {
+      // Initialize first phase
+      updateInstructionDisplay();
+      
+      // Start countdown timer
+      breathingTimer = setInterval(() => {
+        timerSeconds--;
+        updateInstructionDisplay();
+        
+        if (timerSeconds <= 0) {
+          advanceToNextPhase();
+        }
+      }, 1000);
+    }
+    
+    // Stop the breathing timer
+    function stopBreathingTimer() {
+      if (breathingTimer) {
+        clearInterval(breathingTimer);
+        breathingTimer = null;
+      }
+      timerPhase = 'stopped';
+    }
+    
+    // Advance to the next breathing phase
+    function advanceToNextPhase() {
+      const phases = getCurrentBreathingPhases();
+      
+      switch (timerPhase) {
+        case 'preparation':
+          timerPhase = 'inhale';
+          timerSeconds = phases.inhale;
+          break;
+          
+        case 'inhale':
+          timerPhase = 'hold';
+          timerSeconds = phases.hold;
+          break;
+          
+        case 'hold':
+          timerPhase = 'exhale';
+          timerSeconds = phases.exhale;
+          break;
+          
+        case 'exhale':
+          // Complete one cycle
+          currentCycleNumber++;
+          updateCycleProgress();
+          
+          if (currentCycleNumber > totalCycles) {
+            // All cycles completed
+            completeSession();
+          } else {
+            // Start next cycle
+            timerPhase = 'inhale'; // No preparation delay for subsequent cycles
+            timerSeconds = phases.inhale;
+          }
+          break;
+      }
+      
+      // Update displays
+      updateInstructionDisplay();
+    }
+    
+    // Update the instruction panel display
+    function updateInstructionDisplay() {
+      const instructionText = document.getElementById('instructionText');
+      const instructionTimer = document.getElementById('instructionTimer');
+      const instructionPhase = document.getElementById('instructionPhase');
+      const cycleProgress = document.getElementById('cycleProgress');
+      const instructionTitle = document.querySelector('.instruction-title');
+      
+      if (!instructionText || !instructionTimer || !instructionPhase || !cycleProgress) return;
+      
+      // Update instruction title with current settings
+      if (instructionTitle) {
+        const phases = getCurrentBreathingPhases();
+        instructionTitle.textContent = `${phases.inhale}-${phases.hold}-${phases.exhale} Breathing`;
+      }
+      
+      // Update timer display
+      instructionTimer.textContent = timerSeconds;
+      instructionTimer.className = `instruction-timer ${timerPhase}`;
+      
+      // Update phase and instruction text
+      switch (timerPhase) {
+        case 'preparation':
+          instructionText.textContent = 'Get ready to begin...';
+          instructionPhase.textContent = 'Preparation';
+          break;
+          
+        case 'inhale':
+          instructionText.textContent = 'Breathe in slowly through your nose';
+          instructionPhase.textContent = 'Inhale';
+          break;
+          
+        case 'hold':
+          instructionText.textContent = 'Hold your breath gently';
+          instructionPhase.textContent = 'Hold';
+          break;
+          
+        case 'exhale':
+          instructionText.textContent = 'Exhale slowly through your mouth';
+          instructionPhase.textContent = 'Exhale';
+          break;
+      }
+      
+      // Update cycle progress
+      cycleProgress.textContent = `Cycle ${currentCycleNumber} of ${totalCycles}`;
+    }
+    
+    // Update cycle progress in rhythm section
+    function updateCycleProgress() {
+      const currentCycleElement = document.getElementById('currentCycle');
+      const sessionProgressElement = document.getElementById('sessionProgress');
+      
+      if (currentCycleElement) {
+        currentCycleElement.textContent = `${Math.max(0, currentCycleNumber - 1)} / ${totalCycles}`;
+      }
+      
+      if (sessionProgressElement) {
+        const completedCycles = Math.max(0, currentCycleNumber - 1);
+        sessionProgressElement.textContent = `${completedCycles} cycles`;
+      }
+    }
+    
+    // Complete the breathing session
+    function completeSession() {
+      // Stop the timer
+      stopBreathingTimer();
+      
+      // Calculate session duration
+      const sessionDuration = Math.round((Date.now() - sessionStartTime) / 1000);
+      
+      // Update completion modal stats
+      const totalTimeElement = document.querySelector('.completion-modal .stat-number:last-child');
+      if (totalTimeElement) {
+        totalTimeElement.textContent = `${sessionDuration}s`;
+      }
+      
+      // Update completion message with current technique
+      const phases = getCurrentBreathingPhases();
+      const completionMessage = document.querySelector('.completion-modal h3');
+      if (completionMessage) {
+        completionMessage.textContent = `You completed the ${phases.inhale}-${phases.hold}-${phases.exhale} breathing technique!`;
+      }
+      
+      // Show completion modal
+      showCompletionModal();
+    }
+    
+    // Show completion congratulations modal
+    function showCompletionModal() {
+      const modal = document.getElementById('completionModal');
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // Hide completion modal
+    function hideCompletionModal() {
+      const modal = document.getElementById('completionModal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    // Completion modal finish button handler
+    document.getElementById('finishSession').addEventListener('click', function() {
+      hideCompletionModal();
+      stopSession();
+    });
 
     // Breathing Detection and Visualization
     let breathingDetector;
@@ -746,7 +979,6 @@
       // Update breathing state if changed
       if (newState !== currentBreathingState) {
         currentBreathingState = newState;
-        updateBreathingCircle(newState);
         updateBreathingDisplay(movement);
       }
       
@@ -760,37 +992,6 @@
       // Keep only recent data
       if (waveformData.length > maxDataPoints) {
         waveformData.shift();
-      }
-    }
-    
-    // Update breathing circle based on detected state
-    function updateBreathingCircle(state) {
-      const circle = document.getElementById('breathingCircle');
-      const circleState = document.getElementById('circleState');
-      const circleInstruction = document.getElementById('circleInstruction');
-      
-      if (!circle || !circleState || !circleInstruction) return;
-      
-      // Remove all state classes
-      circle.classList.remove('inhale', 'exhale', 'neutral');
-      
-      // Add current state class and update content
-      switch (state) {
-        case 'inhale':
-          circle.classList.add('inhale');
-          circleState.textContent = 'Inhale';
-          circleInstruction.textContent = 'Breathe In';
-          break;
-        case 'exhale':
-          circle.classList.add('exhale');
-          circleState.textContent = 'Exhale';
-          circleInstruction.textContent = 'Breathe Out';
-          break;
-        case 'neutral':
-          circle.classList.add('neutral');
-          circleState.textContent = 'Hold';
-          circleInstruction.textContent = 'Relax';
-          break;
       }
     }
     
@@ -1039,12 +1240,6 @@
       poseDetectionActive = false;
       sessionActive = false;
       
-      // Hide breathing circle
-      const breathingCircle = document.getElementById('breathingCircle');
-      if (breathingCircle) {
-        breathingCircle.classList.add('hidden');
-      }
-      
       // Hide overlay
       const overlay = document.getElementById('videoOverlay');
       overlay.classList.add('hidden');
@@ -1100,6 +1295,12 @@
           updateSettingsDisplay();
           updateTimingDisplay();
         }
+        
+        // Update instruction panel title immediately
+        const instructionTitle = document.querySelector('.instruction-title');
+        if (instructionTitle) {
+          instructionTitle.textContent = `${breathingSettings.inhale}-${breathingSettings.hold}-${breathingSettings.exhale} Breathing`;
+        }
       });
     });
 
@@ -1108,6 +1309,12 @@
       document.getElementById('currentInhale').textContent = breathingSettings.inhale + 's';
       document.getElementById('currentHold').textContent = breathingSettings.hold + 's';
       document.getElementById('currentExhale').textContent = breathingSettings.exhale + 's';
+      
+      // Update instruction panel title if it's visible
+      const instructionTitle = document.querySelector('.instruction-title');
+      if (instructionTitle) {
+        instructionTitle.textContent = `${breathingSettings.inhale}-${breathingSettings.hold}-${breathingSettings.exhale} Breathing`;
+      }
     }
 
     // Update timing controls display
