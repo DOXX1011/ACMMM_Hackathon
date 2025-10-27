@@ -60,6 +60,10 @@ npm start
 4. **🧘 Follow Guide** → Watch the progress ring and breathing diagram
 5. **😌 Relax** → Let the 4-7-8 technique calm your mind
 
+###  Screenshots
+ 
+
+
 ## 🛠️ Technology Stack
 
 <div align="center">
