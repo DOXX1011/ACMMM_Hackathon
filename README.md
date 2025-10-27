@@ -16,9 +16,9 @@
 
 ## 🎯 About
 
-Breava is a web-based breathing and relaxing coach designed specifically for computer workers who need quick relaxation and sleep preparation. Using the scientifically-proven **4-7-8 breathing technique**, it provides real-time visual guidance and breathing pattern analysis.
+Breava is a web-based breathing and relaxation coach designed for anyone who needs balance, sharper focus, and a quick wind-down. Powered by the scientifically supported 4-7-8 technique, it provides real-time visual guidance and breathing-pattern feedback so you can calm your nervous system and smoothly transition your mind and body from digital devices to restful sleep.
 
-> **Perfect for:** Stress relief during work breaks, bedtime preparation, meditation sessions, and anxiety management.
+> **Perfect for:** Stress relief during work breaks, bedtime preparation, meditation sessions, breaking the doomscroll loop 
 
 ### Why 4-7-8 Breathing?
 - **Activates** the parasympathetic nervous system
