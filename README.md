@@ -66,8 +66,10 @@ npm start
 
 | Main Interface | Breathing Instructions | Settings Panel | How to Use Guide |
 |:-------------:|:---------------------:|:--------------:|:----------------:|
-| ![Main Interface](./screenshots/main-interface.png) | ![Breathing Instructions](./screenshots/breathing-instructions.png) | ![Settings Panel](./screenshots/settings-panel.png) | ![How to Use Guide](./screenshots/how-to-use-guide.png) |
+| [📷 View Main Interface](https://ibb.co/5X20X57) | [🫁 View Breathing Instructions](https://ibb.co/FkB06YW) | [⚙️ View Settings Panel](https://ibb.co/23YBK22) | [📖 View How to Use Guide](https://ibb.co/LdyZKhv) |
 | *Camera view with pose detection* | *Real-time breathing guidance* | *Customizable timing settings* | *Interactive tutorial modal* |
+
+**Click any link above to view screenshots in a new window**
 
 </div>
 
