@@ -61,7 +61,15 @@ npm start
 5. **😌 Relax** → Let the 4-7-8 technique calm your mind
 
 ###  Screenshots
- 
+
+<div align="center">
+
+| Main Interface | Breathing Instructions | Settings Panel | How to Use Guide |
+|:-------------:|:---------------------:|:--------------:|:----------------:|
+| ![Main Interface](https://i.ibb.co/5X20X57/screenshot1.png) | ![Breathing Instructions](https://i.ibb.co/FkB06YW/screenshot2.png) | ![Settings Panel](https://i.ibb.co/23YBK22/screenshot3.png) | ![How to Use Guide](https://i.ibb.co/LdyZKhv/screenshot4.png) |
+| *Camera view with pose detection* | *Real-time breathing guidance* | *Customizable timing settings* | *Interactive tutorial modal* |
+
+</div>
 
 
 ## 🛠️ Technology Stack
