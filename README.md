@@ -60,14 +60,14 @@ npm start
 4. **🧘 Follow Guide** → Watch the progress ring and breathing diagram
 5. **😌 Relax** → Let the 4-7-8 technique calm your mind
 
-###  Screenshots
+### 📷  Screenshots
 
 <div align="center">
 
 | Main Interface | Breathing Instructions | Settings Panel | How to Use Guide |
 |:-------------:|:---------------------:|:--------------:|:----------------:|
-| [📷 View Main Interface](https://ibb.co/5X20X57) | [🫁 View Breathing Instructions](https://ibb.co/FkB06YW) | [⚙️ View Settings Panel](https://ibb.co/23YBK22) | [📖 View How to Use Guide](https://ibb.co/LdyZKhv) |
-| *Camera view with pose detection* | *Real-time breathing guidance* | *Customizable timing settings* | *Interactive tutorial modal* |
+| [View Main Interface](https://ibb.co/5X20X57) | [View Breathing Instructions](https://ibb.co/FkB06YW) | [View Settings Panel](https://ibb.co/23YBK22) | [View How to Use Guide](https://ibb.co/LdyZKhv) |
+
 
 **Click any link above to view screenshots in a new window**
 
