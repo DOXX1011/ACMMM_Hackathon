@@ -66,7 +66,7 @@ npm start
 
 | Main Interface | Breathing Instructions | Settings Panel | How to Use Guide |
 |:-------------:|:---------------------:|:--------------:|:----------------:|
-| ![Main Interface](https://www.imgtr.ee/image/1.VjxS) | ![Breathing Instructions](https://i.ibb.co/TqJYKsJ/screenshot2.png) | ![Settings Panel](https://i.ibb.co/8j9w2mF/screenshot3.png) | ![How to Use Guide](https://i.ibb.co/9TfRcyS/screenshot4.png) |
+| ![Main Interface](./screenshots/main-interface.png) | ![Breathing Instructions](./screenshots/breathing-instructions.png) | ![Settings Panel](./screenshots/settings-panel.png) | ![How to Use Guide](./screenshots/how-to-use-guide.png) |
 | *Camera view with pose detection* | *Real-time breathing guidance* | *Customizable timing settings* | *Interactive tutorial modal* |
 
 </div>
@@ -91,14 +91,19 @@ npm start
 breava-breathing-coach/
 ├── 📄 index.html                 # Main application entry point
 ├── 📦 package.json              # Dependencies and npm scripts
-├── � package-lock.json         # Locked dependency versions
-├── �📚 README.md                 # Project documentation
+├── 🔒 package-lock.json         # Locked dependency versions
+├── 📚 README.md                 # Project documentation
 ├── 🚫 .gitignore                # Git ignore rules
+├── 🖼️ screenshots/              # Application screenshots
+│   ├── main-interface.png       # Main camera interface
+│   ├── breathing-instructions.png # Breathing guidance panel
+│   ├── settings-panel.png       # Settings customization
+│   └── how-to-use-guide.png     # Tutorial modal
 ├── 🎨 styles/
 │   └── main.css                 # Application styling & themes
 ├── 🤖 mediapipe/
 │   └── simpleBreathingDetector.js  # Breathing detection & simulation
-└── � node_modules/             # Installed dependencies (auto-generated)
+└── 📁 node_modules/             # Installed dependencies (auto-generated)
 ```
 
 ## 🙏 Acknowledgments
